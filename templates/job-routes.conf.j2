@@ -1,24 +1,33 @@
-{{ ansible_managed | comment }}
-#####################################################
-# Example Job Route
-#
-# This is an extraordinarily simple job route.
-# All it does is route local condor and set a
-# simple Accounting Group and default RequestMemory.
-#####################################################
-
-# No custom functions for job router entries; these are causing crashes in 8.3.5.
-# Can remove the eval_set_environment attribute below starting in 8.3.8.
-JOB_ROUTER_ENTRIES = \
-   [ \
-    eval_set_environment = debug(strcat("HOME=/tmp CONDORCE_COLLECTOR_HOST=", CondorCECollectorHost, " ", \
-        ifThenElse(orig_environment is undefined, osg_environment, \
-          strcat(osg_environment, " ", orig_environment) \
-        ))); \
-     TargetUniverse = 5; \
-     name = "Local_Condor"; \
-     eval_set_AccountingGroup = strcat("group_u_", x509userproxyvoname, ".", Owner); \
-     delete_SUBMIT_Iwd = true; \
-     set_WantIOProxy = true; \
-     set_default_maxMemory = 3000; \
-   ]
+{% if htcondor_ce_job_routes | length > 0 %}
+JOB_ROUTER_ENTRIES @=jre
+{% for item in htcondor_ce_job_routes %}
+[
+    GridResource = "batch slurm";
+    TargetUniverse = 9;
+    name = "{{ item.name }}";
+{% if item.requirements is defined and item.requirements | length > 0 %}
+    Requirements = {{ item.requirements }};
+{% endif %}
+{% if item.nodeNumber is defined %}
+    # see /usr/share/condor-ce/condor_ce_router_defaults this defaults to xcount, which is 8 for cms, i.e. 8 cores, and should be 1 node
+    eval_set_remote_NodeNumber = {{ item.nodeNumber }};
+{% endif %}
+    set_default_queue = "{{ item.queue }}";
+{% if item.maxWallTime is defined %}
+    set_default_maxWallTime = {{ item.maxWallTime }};
+    # in 8.8.4 <= this is required. see: https://www-auth.cs.wisc.edu/lists/htcondor-users/2020-March/msg00011.shtml
+    set_remote_BatchRuntime = {{ item.maxWallTime }};
+{% endif %}
+{% if item.cores is defined %}
+    set_default_xcount = {{ item.cores }};
+{% endif %}
+{% if item.maxMemory is defined %}
+    set_default_maxMemory = {{ item.maxMemory }};
+{% endif %}
+{% if item.jobDirectory is defined %}
+    set_remote_JobDirectory = {{ item.jobDirectory }};
+{% endif %}
+]
+{% endfor %}
+@jre
+{% endif %}
