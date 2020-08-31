@@ -26,13 +26,18 @@
 - name: Disable WN proxy renewal
   lineinfile:
     state: present
-    line: "{{ item }}"
+    line: "{{ item.line }}"
+    regex: "{{ item.regex }}"
     path: /usr/libexec/condor/glite/etc/batch_gahp.config
   loop:
-    - blah_disable_wn_proxy_renewal=yes
-    - blah_delegate_renewed_proxies=no
-    - blah_disable_limited_proxy=yes
-
+    - line: blah_disable_wn_proxy_renewal=yes
+      regex: '^blah_disable_wn_proxy_renewal'
+    - line: blah_delegate_renewed_proxies=no
+      regex: '^blah_delegate_renewed_proxies'
+    - line: blah_disable_limited_proxy=yes
+      regex: '^blah_disable_limited_proxy'
+    - line: blah_shared_directories=/users
+      regex: '^blah_shared_directories'
 
 - name: Configure HTCondor CE sysconfig
   template:
