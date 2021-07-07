@@ -36,8 +36,14 @@
       regex: '^blah_delegate_renewed_proxies'
     - line: blah_disable_limited_proxy=yes
       regex: '^blah_disable_limited_proxy'
-    - line: blah_shared_directories=/users
+    - line: "blah_shared_directories={{ htcondor_ce_shared_dir | unique | join(':') }}"
       regex: '^blah_shared_directories'
+
+- name: Copy slurm_local_submit_attributes.sh customization
+  file:
+    src: slurm_local_submit_attributes.sh
+    dest: /usr/libexec/condor/glite/bin/
+    mode: "0755"
 
 - name: Configure HTCondor CE sysconfig
   template:
